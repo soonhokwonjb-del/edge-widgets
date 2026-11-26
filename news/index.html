@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>인니 뉴스 헤드라인</title>
+<style>
+  :root{--bg:#0b0d10;--card:#151a21;--line:#232a33;--fg:#e9edf2;--sub:#8b96a5;--hl:#ffb14a;--sel:#1f2a38}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:var(--bg);color:var(--fg);font-family:"Pretendard","Malgun Gothic","Apple SD Gothic Neo",sans-serif;overflow:hidden}
+  body{display:flex;flex-direction:column;gap:9px;padding:12px}
+  .head{padding:10px 16px}
+  .head .t{display:flex;justify-content:space-between;align-items:baseline}
+  .head .d{font-size:20px;font-weight:700}
+  .head .m{font-size:13px;color:var(--sub)}
+  .head .h{font-size:14px;color:#c9d3df;margin-top:4px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px}
+  .main{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:9px;min-height:0}
+  .list{overflow-y:auto;padding:6px}
+  .item{display:flex;gap:10px;align-items:flex-start;padding:9px 10px;border-radius:10px;cursor:pointer}
+  .item+.item{border-top:1px solid var(--line)}
+  .item.on{background:var(--sel)}
+  .tag{flex:none;font-size:12px;padding:2px 7px;border-radius:6px;background:#2a3340;color:#c9d3df;margin-top:2px;min-width:62px;text-align:center}
+  .item.hl .tag{background:#5a3d12;color:var(--hl)}
+  .item .tt{font-size:16px;line-height:1.35}
+  .item.hl .tt{color:#ffd9a3;font-weight:600}
+  .detail{overflow-y:auto;padding:14px 18px}
+  .detail h2{font-size:19px;line-height:1.35;margin-bottom:6px}
+  .detail .src{font-size:13px;color:var(--sub);margin-bottom:10px}
+  .detail ul{padding-left:18px}
+  .detail li{font-size:15px;line-height:1.55;margin-bottom:6px;color:#d6dde6}
+  .detail .cm{margin-top:10px;padding:10px 12px;border-left:3px solid var(--hl);background:#1d1a14;font-size:15px;line-height:1.5;color:#f1e3cc}
+  .err{color:#ff6b6b;padding:20px}
+  ::-webkit-scrollbar{width:6px} ::-webkit-scrollbar-thumb{background:#2a3340;border-radius:3px}
+</style>
+</head>
+<body>
+  <div class="card head">
+    <div class="t"><div class="d" id="bd">인니 일일 브리핑</div><div class="m" id="upd"></div></div>
+    <div class="h" id="hl"></div>
+  </div>
+  <div class="main">
+    <div class="card list" id="list"></div>
+    <div class="card detail" id="detail"></div>
+  </div>
+<script>
+const REPO='https://raw.githubusercontent.com/soonhokwonjb-del/indo-briefings/main/';
+const TAG={Macro:'거시경제',Oil:'유가',OJK:'OJK 규제',Reg:'OJK 규제',Regulation:'OJK 규제',Peer:'동종사',MFC:'업권·OJK',
+  'MFC 업권 단독':'업권',KBBF:'KBBF','KBBF-KR':'KBBF',Auto:'자동차','Auto-EV':'전기이륜',EV:'전기이륜',Mining:'광업·중장비',HeavyEq:'중장비'};
+const HL=t=>/^(Peer|OJK|Reg|Regulation|KBBF|MFC)/.test(t);
+let ITEMS=[], SEL=0;
+
+function jktDate(off){const d=new Date(Date.now()-off*86400000);const p={};new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(d).forEach(x=>p[x.type]=x.value);return `${p.year}-${p.month}-${p.day}`;}
+
+async function findLatest(){
+  for(let i=0;i<10;i++){
+    const d=jktDate(i);
+    for(const name of [d+'.md',d+'-weekend.md']){
+      try{const r=await fetch(REPO+name+'?t='+Date.now(),{cache:'no-store'}); if(r.ok) return {date:d,text:await r.text()};}catch(e){}
+    }
+  }
+  return null;
+}
+
+function parse(md){
+  const hl=(md.match(/\*\*오늘의 헤드라인\*\*:\s*(.+)/)||[])[1]||'';
+  const parts=md.split(/^## \d+\.\s*/m).slice(1);
+  const items=parts.map(p=>{
+    const lines=p.split('\n');
+    const head=lines[0].trim();
+    const m=head.match(/^\[([^\]]+)\]\s*(.*)$/);
+    const tag=m?m[1]:'', title=m?m[2]:head;
+    const get=k=>{const l=lines.find(x=>x.startsWith('- '+k+':'));return l?l.slice(k.length+3).trim():'';};
+    const pts=[]; let inBody=false, comment='';
+    for(const l of lines){
+      if(l.startsWith('- 본문 요지')){inBody=true;continue;}
+      if(l.startsWith('- 한 줄 코멘트')){inBody=false;comment=l.replace(/^- 한 줄 코멘트:\s*/,'');continue;}
+      if(inBody && /^\s+- /.test(l)) pts.push(l.replace(/^\s+- /,''));
+      else if(inBody && l.startsWith('- ')) inBody=false;
+    }
+    return {tag,title,media:get('매체'),date:get('보도일'),pts,comment};
+  }).filter(x=>x.title && !/^---/.test(x.title));
+  return {hl,items};
+}
+
+const esc=s=>s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');
+
+function render(){
+  const L=document.getElementById('list');
+  L.innerHTML=ITEMS.map((it,i)=>`<div class="item${HL(it.tag)?' hl':''}${i===SEL?' on':''}" data-i="${i}"><span class="tag">${TAG[it.tag]||it.tag||'기타'}</span><span class="tt">${esc(it.title)}</span></div>`).join('');
+  L.querySelectorAll('.item').forEach(el=>el.onclick=()=>{SEL=+el.dataset.i;render();});
+  const it=ITEMS[SEL]; const D=document.getElementById('detail');
+  if(!it){D.innerHTML='';return;}
+  D.innerHTML=`<h2>${esc(it.title)}</h2><div class="src">${esc(it.media)} · ${esc(it.date)}</div><ul>${it.pts.map(p=>`<li>${esc(p)}</li>`).join('')}</ul>${it.comment?`<div class="cm">${esc(it.comment)}</div>`:''}`;
+  D.scrollTop=0;
+}
+
+async function load(){
+  const f=await findLatest();
+  if(!f){document.getElementById('list').innerHTML='<div class="err">최근 브리핑을 찾지 못함</div>';return;}
+  const {hl,items}=parse(f.text);
+  const [y,m,d]=f.date.split('-');
+  const wd=['일','월','화','수','목','금','토'][new Date(f.date+'T00:00:00').getDay()];
+  document.getElementById('bd').textContent=`${+m}월 ${+d}일(${wd}) 인니 브리핑 · ${items.length}건`;
+  document.getElementById('hl').textContent=hl;
+  document.getElementById('upd').textContent='새로고침 '+new Date().toLocaleTimeString('ko-KR',{timeZone:'Asia/Jakarta',hour:'2-digit',minute:'2-digit'});
+  const keep=ITEMS[SEL]&&ITEMS[SEL].title;
+  ITEMS=items; const k=items.findIndex(x=>x.title===keep); SEL=k>=0?k:0;
+  render();
+}
+load(); setInterval(load,30*60*1000);
+</script>
+</body>
+</html>
