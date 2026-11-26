@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>자카르타 생활 보드</title>
+<style>
+  :root{--bg:#0b0d10;--card:#151a21;--line:#232a33;--fg:#e9edf2;--sub:#8b96a5;--acc:#5aa9ff;--warn:#ffb14a;--bad:#ff6b6b;--good:#4cd486}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:var(--bg);color:var(--fg);font-family:"Pretendard","Malgun Gothic","Apple SD Gothic Neo",sans-serif;overflow:hidden}
+  body{display:flex;flex-direction:column;gap:12px;padding:16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 18px}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .sub{color:var(--sub);font-size:17px}
+  /* clock */
+  .clock .jkt{font-size:64px;font-weight:700;letter-spacing:-1px;line-height:1}
+  .clock .lbl{font-size:16px;color:var(--sub);margin-bottom:4px}
+  .clock .sel{font-size:38px;font-weight:600;color:#c9d3df;line-height:1}
+  .clock .date{font-size:20px;margin-top:8px;color:#c9d3df}
+  /* weather */
+  .wx .temp{font-size:52px;font-weight:700;line-height:1}
+  .wx .desc{font-size:20px;margin-top:4px}
+  .aqi{text-align:center;border-radius:12px;padding:8px 14px;min-width:150px}
+  .aqi .v{font-size:34px;font-weight:700;line-height:1.1}
+  .aqi .t{font-size:16px}
+  .bars{display:flex;align-items:flex-end;gap:4px;height:70px;margin-top:12px}
+  .bar{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+  .bar i{display:block;width:100%;border-radius:4px 4px 0 0;background:#2c6fb8;min-height:2px}
+  .bar.c i{background:var(--warn)}
+  .bar.now i{outline:2px solid #fff}
+  .bar b{font-size:11px;color:var(--sub);font-weight:400;margin-top:3px}
+  .commute{font-size:19px;margin-top:8px}
+  /* holidays */
+  .hol{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .hol .k{font-size:15px;color:var(--sub)}
+  .hol .d{font-size:30px;font-weight:700;line-height:1.15}
+  .hol .n{font-size:16px;color:#c9d3df;margin-top:2px}
+  /* prayer */
+  .pr .main{font-size:24px;font-weight:600}
+  .pr .note{font-size:16px;color:var(--warn);margin-top:4px}
+  .err{color:var(--bad);font-size:14px}
+</style>
+</head>
+<body>
+  <div class="card clock">
+    <div class="row">
+      <div>
+        <div class="lbl">자카르타</div>
+        <div class="jkt" id="tJkt">--:--</div>
+      </div>
+      <div style="text-align:right">
+        <div class="lbl">서울</div>
+        <div class="sel" id="tSel">--:--</div>
+      </div>
+    </div>
+    <div class="date" id="dateLine"></div>
+  </div>
+
+  <div class="card wx">
+    <div class="row">
+      <div>
+        <div class="temp" id="temp">--°C</div>
+        <div class="desc" id="desc">날씨 불러오는 중</div>
+      </div>
+      <div class="aqi" id="aqiBox">
+        <div class="t">대기질 (AQI)</div>
+        <div class="v" id="aqiV">--</div>
+        <div class="t" id="aqiT"></div>
+      </div>
+    </div>
+    <div class="bars" id="bars"></div>
+    <div class="commute" id="commute"></div>
+  </div>
+
+  <div class="card hol">
+    <div>
+      <div class="k">인니 휴일·cuti bersama</div>
+      <div class="d" id="idD">-</div>
+      <div class="n" id="idN"></div>
+    </div>
+    <div>
+      <div class="k">한국 공휴일</div>
+      <div class="d" id="krD">-</div>
+      <div class="n" id="krN"></div>
+    </div>
+  </div>
+
+  <div class="card pr">
+    <div class="main" id="prMain">기도 시간 불러오는 중</div>
+    <div class="note" id="prNote"></div>
+  </div>
+
+<script>
+const LAT=-6.2297, LON=106.8025; // Kebayoran Baru
+const WD=['일','월','화','수','목','금','토'];
+
+// 인니: SKB 3 Menteri 2026·2027 (libur nasional + cuti bersama)
+const ID_HOL=[
+ ['2026-12-24','성탄절 cuti bersama'],['2026-12-25','성탄절'],
+ ['2027-01-01','신정'],['2027-01-05','이스라 미라즈'],['2027-02-05','설날 cuti bersama'],['2027-02-06','설날(Imlek)'],
+ ['2027-03-08','녀삐(Nyepi)'],['2027-03-09','르바란 cuti bersama'],['2027-03-10','르바란(Idul Fitri)'],['2027-03-11','르바란(Idul Fitri)'],
+ ['2027-03-12','르바란 cuti bersama'],['2027-03-15','르바란 cuti bersama'],['2027-03-25','성금요일 cuti bersama'],['2027-03-26','성금요일'],
+ ['2027-03-28','부활절'],['2027-05-01','노동절'],['2027-05-06','예수 승천일'],['2027-05-17','이둘 아드하'],['2027-05-18','이둘 아드하 cuti bersama'],
+ ['2027-05-19','와이삭 cuti bersama'],['2027-05-20','와이삭'],['2027-06-01','빤짜실라의 날'],['2027-06-06','이슬람 신년'],
+ ['2027-08-15','마울리드'],['2027-08-17','독립기념일'],['2027-12-24','성탄절 cuti bersama'],['2027-12-25','성탄절'],['2027-12-26','이스라 미라즈']
+];
+// 한국: 우주항공청 2027 월력요항 기준(대체공휴일 포함)
+const KR_HOL=[
+ ['2026-12-25','성탄절'],
+ ['2027-01-01','신정'],['2027-02-06','설날 연휴'],['2027-02-07','설날'],['2027-02-08','설날 연휴'],['2027-02-09','대체공휴일(설날)'],
+ ['2027-03-01','삼일절'],['2027-05-01','노동절'],['2027-05-03','대체공휴일(노동절)'],['2027-05-05','어린이날'],['2027-05-13','부처님오신날'],
+ ['2027-06-06','현충일'],['2027-07-17','제헌절'],['2027-07-19','대체공휴일(제헌절)'],['2027-08-15','광복절'],['2027-08-16','대체공휴일(광복절)'],
+ ['2027-09-14','추석 연휴'],['2027-09-15','추석'],['2027-09-16','추석 연휴'],['2027-10-03','개천절'],['2027-10-04','대체공휴일(개천절)'],
+ ['2027-10-09','한글날'],['2027-10-11','대체공휴일(한글날)'],['2027-12-25','성탄절'],['2027-12-27','대체공휴일(성탄절)']
+];
+
+function tzParts(tz){
+  const f=new Intl.DateTimeFormat('en-CA',{timeZone:tz,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23',weekday:'short'});
+  const o={};f.formatToParts(new Date()).forEach(p=>o[p.type]=p.value);return o;
+}
+function jktDateStr(){const p=tzParts('Asia/Jakarta');return `${p.year}-${p.month}-${p.day}`;}
+function jktMinutes(){const p=tzParts('Asia/Jakarta');return (+p.hour%24)*60+(+p.minute);}
+
+function tickClock(){
+  const j=tzParts('Asia/Jakarta'), s=tzParts('Asia/Seoul');
+  document.getElementById('tJkt').textContent=`${j.hour}:${j.minute}`;
+  document.getElementById('tSel').textContent=`${s.hour}:${s.minute}`;
+  const d=new Date(`${j.year}-${j.month}-${j.day}T00:00:00`);
+  document.getElementById('dateLine').textContent=`${+j.month}월 ${+j.day}일 (${WD[d.getDay()]})`;
+}
+
+function dday(list,elD,elN){
+  const today=jktDateStr();
+  const next=list.find(([d])=>d>=today);
+  if(!next){document.getElementById(elD).textContent='-';return;}
+  const diff=Math.round((new Date(next[0])-new Date(today))/86400000);
+  const [y,m,dd]=next[0].split('-');
+  const wd=WD[new Date(next[0]+'T00:00:00').getDay()];
+  document.getElementById(elD).textContent= diff===0?'오늘':`D-${diff}`;
+  document.getElementById(elN).textContent=`${+m}/${+dd}(${wd}) ${next[1]}`;
+}
+
+const WMO={0:'맑음',1:'대체로 맑음',2:'구름 조금',3:'흐림',45:'안개',48:'안개',51:'약한 이슬비',53:'이슬비',55:'강한 이슬비',61:'약한 비',63:'비',65:'강한 비',80:'약한 소나기',81:'소나기',82:'강한 소나기',95:'뇌우',96:'뇌우·우박',99:'강한 뇌우'};
+
+async function loadWeather(){
+  try{
+    const u=`https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&current=temperature_2m,weather_code,relative_humidity_2m&hourly=precipitation_probability&timezone=Asia%2FJakarta&forecast_days=1`;
+    const r=await fetch(u); const w=await r.json();
+    document.getElementById('temp').textContent=`${Math.round(w.current.temperature_2m)}°C`;
+    document.getElementById('desc').textContent=`${WMO[w.current.weather_code]||'날씨'} · 습도 ${w.current.relative_humidity_2m}%`;
+    const hrs=w.hourly.time.map(t=>+t.slice(11,13)), pp=w.hourly.precipitation_probability;
+    const nowH=Math.floor(jktMinutes()/60);
+    let html='', cMax=0;
+    for(let i=0;i<hrs.length;i++){
+      const h=hrs[i]; if(h<6||h>21) continue;
+      const c=(h>=16&&h<=19); if(c) cMax=Math.max(cMax,pp[i]);
+      html+=`<div class="bar${c?' c':''}${h===nowH?' now':''}"><i style="height:${Math.max(3,pp[i])}%"></i><b>${h}</b></div>`;
+    }
+    document.getElementById('bars').innerHTML=html;
+    const msg = cMax>=60?'우산 필요, 퇴근길 정체 예상':cMax>=30?'비 가능성 있음':'비 걱정 적음';
+    document.getElementById('commute').innerHTML=`퇴근시간(16~19시) 강수확률 최대 <b style="color:${cMax>=60?'var(--warn)':'inherit'}">${cMax}%</b> · ${msg}`;
+  }catch(e){document.getElementById('desc').innerHTML='<span class="err">날씨 정보를 불러오지 못함</span>';}
+}
+
+async function loadAQI(){
+  try{
+    const u=`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${LAT}&longitude=${LON}&current=us_aqi,pm2_5&timezone=Asia%2FJakarta`;
+    const a=await (await fetch(u)).json();
+    const v=Math.round(a.current.us_aqi), pm=Math.round(a.current.pm2_5);
+    const lv = v<=50?['좋음','#1f6b3f']:v<=100?['보통','#6b5f1f']:v<=150?['민감군 나쁨','#7a4a14']:v<=200?['나쁨','#7a1f1f']:['매우 나쁨','#5a1f6b'];
+    document.getElementById('aqiV').textContent=v;
+    document.getElementById('aqiT').textContent=`${lv[0]} · PM2.5 ${pm}`;
+    document.getElementById('aqiBox').style.background=lv[1];
+  }catch(e){document.getElementById('aqiT').innerHTML='<span class="err">불러오기 실패</span>';}
+}
+
+let PR=null;
+const PNAME={Fajr:'Subuh',Dhuhr:'Dzuhur',Asr:'Ashar',Maghrib:'Maghrib',Isha:'Isya'};
+async function loadPrayer(){
+  try{
+    const d=jktDateStr().split('-'); const ds=`${d[2]}-${d[1]}-${d[0]}`;
+    const r=await (await fetch(`https://api.aladhan.com/v1/timings/${ds}?latitude=${LAT}&longitude=${LON}&method=20`)).json();
+    PR={t:r.data.timings, hijriMonth:r.data.date.hijri.month.number};
+    renderPrayer();
+  }catch(e){document.getElementById('prMain').innerHTML='<span class="err">기도 시간을 불러오지 못함</span>';}
+}
+function renderPrayer(){
+  if(!PR) return;
+  const now=jktMinutes();
+  const order=['Fajr','Dhuhr','Asr','Maghrib','Isha'];
+  const toM=s=>{const [h,m]=s.slice(0,5).split(':');return +h*60+ +m;};
+  let next=order.find(k=>toM(PR.t[k])>now);
+  const p=tzParts('Asia/Jakarta'); const dow=new Date(`${p.year}-${p.month}-${p.day}T00:00:00`).getDay();
+  if(next){
+    const left=toM(PR.t[next])-now; const lh=Math.floor(left/60), lm=left%60;
+    let name=PNAME[next]; if(next==='Dhuhr'&&dow===5) name='Jumatan(금요 정오 기도)';
+    document.getElementById('prMain').textContent=`다음 기도: ${name} ${PR.t[next].slice(0,5)} (${lh?lh+'시간 ':''}${lm}분 후)`;
+  }else{
+    document.getElementById('prMain').textContent=`오늘 기도 일정 종료 · 내일 Subuh ${PR.t.Fajr.slice(0,5)}`;
+  }
+  const notes=[];
+  if(dow===5) notes.push(`금요일 정오 기도 ${PR.t.Dhuhr.slice(0,5)} 전후 직원 자리 비움 많음`);
+  if(PR.hijriMonth===9) notes.push(`라마단 기간 · 금식 종료(Maghrib) ${PR.t.Maghrib.slice(0,5)}`);
+  document.getElementById('prNote').textContent=notes.join(' / ');
+}
+
+let lastDay='';
+function everyMinute(){
+  tickClock(); renderPrayer();
+  const d=jktDateStr();
+  if(d!==lastDay){lastDay=d; dday(ID_HOL,'idD','idN'); dday(KR_HOL,'krD','krN'); loadPrayer();}
+}
+everyMinute(); setInterval(everyMinute,15000);
+loadWeather(); loadAQI(); setInterval(()=>{loadWeather();loadAQI();},15*60*1000);
+</script>
+</body>
+</html>
