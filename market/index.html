@@ -40,7 +40,7 @@
       <div class="s chg" id="usdidrC"></div>
     </div>
     <div class="card tile">
-      <div class="k">1원 = ? 루피아</div>
+      <div class="k">1루피아 = ? 원</div>
       <div class="v" id="krwidr">-</div>
       <div class="s" id="idr1m"></div>
     </div>
@@ -112,8 +112,9 @@ async function loadFX(){
     document.getElementById('usdkrw').textContent=nf(L.KRW,1);
     chg('usdkrwC',L.KRW,P&&P.KRW,1);
     const krwidr=L.IDR/L.KRW;
-    document.getElementById('krwidr').textContent=`${nf(krwidr,2)} IDR`;
-    document.getElementById('idr1m').textContent=`100만 루피아 = ${nf(1e6/krwidr,0)}원`;
+    const idrkrw=1/krwidr;
+    document.getElementById('krwidr').textContent=`${nf(idrkrw,4)}원`;
+    document.getElementById('idr1m').textContent=`1만 루피아 = ${nf(1e4*idrkrw,0)}원 · 100만 루피아 = ${nf(1e6*idrkrw,0)}원`;
     const [y,m,d]=last.split('-');
     document.getElementById('asof').textContent=`환율 기준일 ${+m}/${+d} (ECB 고시) · 차트 3개월`;
   }catch(e){document.getElementById('asof').textContent='환율을 불러오지 못함';}
