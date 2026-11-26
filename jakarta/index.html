@@ -8,36 +8,36 @@
   :root{--bg:#0b0d10;--card:#151a21;--line:#232a33;--fg:#e9edf2;--sub:#8b96a5;--acc:#5aa9ff;--warn:#ffb14a;--bad:#ff6b6b;--good:#4cd486}
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{height:100%;background:var(--bg);color:var(--fg);font-family:"Pretendard","Malgun Gothic","Apple SD Gothic Neo",sans-serif;overflow:hidden}
-  body{display:flex;flex-direction:column;gap:12px;padding:16px}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 18px}
+  body{display:flex;flex-direction:column;gap:9px;padding:12px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:10px 16px}
   .row{display:flex;align-items:center;justify-content:space-between;gap:12px}
   .sub{color:var(--sub);font-size:17px}
   /* clock */
-  .clock .jkt{font-size:64px;font-weight:700;letter-spacing:-1px;line-height:1}
+  .clock .jkt{font-size:54px;font-weight:700;letter-spacing:-1px;line-height:1}
   .clock .lbl{font-size:16px;color:var(--sub);margin-bottom:4px}
-  .clock .sel{font-size:38px;font-weight:600;color:#c9d3df;line-height:1}
-  .clock .date{font-size:20px;margin-top:8px;color:#c9d3df}
+  .clock .sel{font-size:34px;font-weight:600;color:#c9d3df;line-height:1}
+  .clock .date{font-size:18px;margin-top:4px;color:#c9d3df}
   /* weather */
-  .wx .temp{font-size:52px;font-weight:700;line-height:1}
+  .wx .temp{font-size:44px;font-weight:700;line-height:1}
   .wx .desc{font-size:20px;margin-top:4px}
   .aqi{text-align:center;border-radius:12px;padding:8px 14px;min-width:150px}
   .aqi .v{font-size:34px;font-weight:700;line-height:1.1}
   .aqi .t{font-size:16px}
-  .bars{display:flex;align-items:flex-end;gap:4px;height:70px;margin-top:12px}
+  .bars{display:flex;align-items:flex-end;gap:4px;height:58px;margin-top:8px}
   .bar{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
   .bar i{display:block;width:100%;border-radius:4px 4px 0 0;background:#2c6fb8;min-height:2px}
   .bar.c i{background:var(--warn)}
   .bar.now i{outline:2px solid #fff}
   .bar b{font-size:11px;color:var(--sub);font-weight:400;margin-top:3px}
-  .commute{font-size:19px;margin-top:8px}
+  .commute{font-size:17px;margin-top:6px}
   /* holidays */
   .hol{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   .hol .k{font-size:15px;color:var(--sub)}
-  .hol .d{font-size:30px;font-weight:700;line-height:1.15}
+  .hol .d{font-size:26px;font-weight:700;line-height:1.15}
   .hol .n{font-size:16px;color:#c9d3df;margin-top:2px}
   /* prayer */
-  .pr .main{font-size:24px;font-weight:600}
-  .pr .note{font-size:16px;color:var(--warn);margin-top:4px}
+  .pr .main{font-size:21px;font-weight:600}
+  .pr .note{font-size:15px;color:var(--warn);margin-top:4px}
   .err{color:var(--bad);font-size:14px}
 </style>
 </head>
