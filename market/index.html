@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>시장 지표판</title>
+<style>
+  :root{--bg:#0b0d10;--card:#151a21;--line:#232a33;--fg:#e9edf2;--sub:#8b96a5;--up:#ff6b6b;--dn:#5aa9ff;--warn:#ffb14a}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:var(--bg);color:var(--fg);font-family:"Pretendard","Malgun Gothic","Apple SD Gothic Neo",sans-serif;overflow:hidden}
+  body{display:flex;flex-direction:column;gap:9px;padding:12px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px}
+  .top{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .tile{padding:10px 14px}
+  .k{font-size:14px;color:var(--sub)}
+  .v{font-size:30px;font-weight:700;line-height:1.15;margin-top:2px}
+  .s{font-size:14px;color:#c9d3df;margin-top:2px}
+  .chg.up{color:var(--up)} .chg.dn{color:var(--dn)}
+  .asof{font-size:12px;color:var(--sub);text-align:right;margin-top:-3px}
+  .grid{flex:1;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:1fr 1fr;gap:9px;min-height:0}
+  .cell{position:relative;overflow:hidden;padding:4px}
+  .cell .lbl{position:absolute;left:12px;top:8px;font-size:12px;color:var(--sub);z-index:2;pointer-events:none}
+  .tradingview-widget-container{width:100%;height:100%}
+  .tradingview-widget-copyright{display:none}
+</style>
+</head>
+<body>
+  <div class="top">
+    <div class="card tile">
+      <div class="k">USD/IDR</div>
+      <div class="v" id="usdidr">-</div>
+      <div class="s chg" id="usdidrC"></div>
+    </div>
+    <div class="card tile">
+      <div class="k">1원 = ? 루피아</div>
+      <div class="v" id="krwidr">-</div>
+      <div class="s" id="idr1m"></div>
+    </div>
+    <div class="card tile">
+      <div class="k">USD/KRW</div>
+      <div class="v" id="usdkrw">-</div>
+      <div class="s chg" id="usdkrwC"></div>
+    </div>
+    <div class="card tile">
+      <div class="k">BI-Rate</div>
+      <div class="v" id="birate">6.00%</div>
+      <div class="s" id="rdg"></div>
+    </div>
+  </div>
+  <div class="asof" id="asof"></div>
+
+  <div class="grid">
+    <div class="card cell"><div class="tradingview-widget-container"><div class="tradingview-widget-container__widget"></div>
+      <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>
+      {"symbol":"IDX:COMPOSITE","width":"100%","height":"100%","locale":"kr","dateRange":"1M","colorTheme":"dark","isTransparent":true,"autosize":true,"largeChartUrl":"","chartOnly":false,"noTimeScale":true}
+      </script></div></div>
+    <div class="card cell"><div class="tradingview-widget-container"><div class="tradingview-widget-container__widget"></div>
+      <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>
+      {"symbol":"KRX:KOSPI","width":"100%","height":"100%","locale":"kr","dateRange":"1M","colorTheme":"dark","isTransparent":true,"autosize":true,"largeChartUrl":"","chartOnly":false,"noTimeScale":true}
+      </script></div></div>
+    <div class="card cell"><div class="tradingview-widget-container"><div class="tradingview-widget-container__widget"></div>
+      <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>
+      {"symbol":"KRX:175330","width":"100%","height":"100%","locale":"kr","dateRange":"1M","colorTheme":"dark","isTransparent":true,"autosize":true,"largeChartUrl":"","chartOnly":false,"noTimeScale":true}
+      </script></div></div>
+    <div class="card cell"><div class="tradingview-widget-container"><div class="tradingview-widget-container__widget"></div>
+      <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>
+      {"symbol":"FOREXCOM:SPXUSD","width":"100%","height":"100%","locale":"kr","dateRange":"1M","colorTheme":"dark","isTransparent":true,"autosize":true,"largeChartUrl":"","chartOnly":false,"noTimeScale":true}
+      </script></div></div>
+    <div class="card cell"><div class="tradingview-widget-container"><div class="tradingview-widget-container__widget"></div>
+      <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>
+      {"symbol":"FOREXCOM:NSXUSD","width":"100%","height":"100%","locale":"kr","dateRange":"1M","colorTheme":"dark","isTransparent":true,"autosize":true,"largeChartUrl":"","chartOnly":false,"noTimeScale":true}
+      </script></div></div>
+    <div class="card cell"><div class="tradingview-widget-container"><div class="tradingview-widget-container__widget"></div>
+      <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>
+      {"symbol":"TVC:UKOIL","width":"100%","height":"100%","locale":"kr","dateRange":"1M","colorTheme":"dark","isTransparent":true,"autosize":true,"largeChartUrl":"","chartOnly":false,"noTimeScale":true}
+      </script></div></div>
+  </div>
+
+<script>
+// BI-Rate: RDG 17-18 Nov 2026 결과 6.00%. 다음 RDG 15-16 Dec 2026 (결과 발표 16일)
+const RDG=['2026-12-16'];
+const nf=(n,d)=>n.toLocaleString('ko-KR',{minimumFractionDigits:d,maximumFractionDigits:d});
+function jktToday(){const p={};new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Jakarta',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date()).forEach(x=>p[x.type]=x.value);return `${p.year}-${p.month}-${p.day}`;}
+function renderRDG(){
+  const t=jktToday(); const n=RDG.find(d=>d>=t);
+  const el=document.getElementById('rdg');
+  if(!n){el.textContent='다음 RDG 일정 갱신 필요';return;}
+  const diff=Math.round((new Date(n)-new Date(t))/86400000);
+  const [y,m,d]=n.split('-');
+  el.textContent=`다음 RDG 결과 ${+m}/${+d} (${diff===0?'오늘':'D-'+diff})`;
+}
+function chg(el,cur,prev,dec){
+  const e=document.getElementById(el); if(prev==null){e.textContent='';return;}
+  const d=cur-prev, p=d/prev*100;
+  e.className='s chg '+(d>0?'up':d<0?'dn':'');
+  e.textContent=`${d>0?'▲':d<0?'▼':'-'} ${nf(Math.abs(d),dec)} (${p>0?'+':''}${p.toFixed(2)}%) 전일 대비`;
+}
+async function loadFX(){
+  try{
+    const end=new Date(); const start=new Date(end.getTime()-10*86400000);
+    const s=start.toISOString().slice(0,10);
+    const r=await (await fetch(`https://api.frankfurter.dev/v1/${s}..?base=USD&symbols=IDR,KRW`)).json();
+    const days=Object.keys(r.rates).sort(); const last=days[days.length-1], prev=days[days.length-2];
+    const L=r.rates[last], P=prev?r.rates[prev]:null;
+    document.getElementById('usdidr').textContent=nf(L.IDR,0);
+    chg('usdidrC',L.IDR,P&&P.IDR,0);
+    document.getElementById('usdkrw').textContent=nf(L.KRW,1);
+    chg('usdkrwC',L.KRW,P&&P.KRW,1);
+    const krwidr=L.IDR/L.KRW;
+    document.getElementById('krwidr').textContent=`${nf(krwidr,2)} IDR`;
+    document.getElementById('idr1m').textContent=`100만 루피아 = ${nf(1e6/krwidr,0)}원`;
+    const [y,m,d]=last.split('-');
+    document.getElementById('asof').textContent=`환율 기준일 ${+m}/${+d} (ECB 고시) · 차트 TradingView`;
+  }catch(e){document.getElementById('asof').textContent='환율을 불러오지 못함';}
+}
+renderRDG(); loadFX();
+setInterval(()=>{renderRDG();loadFX();},60*60*1000);
+setTimeout(()=>location.reload(),6*60*60*1000);
+</script>
+</body>
+</html>
