@@ -31,6 +31,15 @@
   .detail ul{padding-left:18px}
   .detail li{font-size:15px;line-height:1.55;margin-bottom:6px;color:#d6dde6}
   .detail .cm{margin-top:10px;padding:10px 12px;border-left:3px solid var(--hl);background:#1d1a14;font-size:15px;line-height:1.5;color:#f1e3cc}
+  body.compact .main{grid-template-columns:1fr}
+  body.compact .detail{display:none}
+  body.compact .head .h{-webkit-line-clamp:3}
+  .ex{display:none;padding:6px 10px 12px 82px}
+  .ex.on{display:block}
+  .ex .src{font-size:12px;color:var(--sub);margin-bottom:6px}
+  .ex ul{padding-left:16px}
+  .ex li{font-size:14px;line-height:1.5;margin-bottom:5px;color:#d6dde6}
+  .ex .cm{margin-top:8px;padding:8px 10px;border-left:3px solid var(--hl);background:#1d1a14;font-size:14px;line-height:1.45;color:#f1e3cc}
   .err{color:#ff6b6b;padding:20px}
   ::-webkit-scrollbar{width:6px} ::-webkit-scrollbar-thumb{background:#2a3340;border-radius:3px}
 </style>
@@ -50,6 +59,8 @@ const TAG={Macro:'거시경제',Oil:'유가',OJK:'OJK 규제',Reg:'OJK 규제',R
   'MFC 업권 단독':'업권',KBBF:'KBBF','KBBF-KR':'KBBF',Auto:'자동차','Auto-EV':'전기이륜',EV:'전기이륜',Mining:'광업·중장비',HeavyEq:'중장비'};
 const HL=t=>/^(Peer|OJK|Reg|Regulation|KBBF|MFC)/.test(t);
 let ITEMS=[], SEL=0;
+const COMPACT=new URLSearchParams(location.search).get('compact')==='1'||innerWidth<1100;
+if(COMPACT){document.body.classList.add('compact');SEL=-1;}
 
 function jktDate(off){const d=new Date(Date.now()-off*86400000);const p={};new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(d).forEach(x=>p[x.type]=x.value);return `${p.year}-${p.month}-${p.day}`;}
 
@@ -88,6 +99,11 @@ const esc=s=>s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])).rep
 
 function render(){
   const L=document.getElementById('list');
+  if(COMPACT){
+    L.innerHTML=ITEMS.map((it,i)=>`<div class="item${HL(it.tag)?' hl':''}${i===SEL?' on':''}" data-i="${i}"><span class="tag">${TAG[it.tag]||it.tag||'기타'}</span><span class="tt">${esc(it.title)}</span></div><div class="ex${i===SEL?' on':''}"><div class="src">${esc(it.media)} · ${esc(it.date)}</div><ul>${it.pts.map(p=>`<li>${esc(p)}</li>`).join('')}</ul>${it.comment?`<div class="cm">${esc(it.comment)}</div>`:''}</div>`).join('');
+    L.querySelectorAll('.item').forEach(el=>el.onclick=()=>{const i=+el.dataset.i;SEL=(SEL===i?-1:i);render();if(SEL>=0){const n=L.querySelector('.item[data-i="'+SEL+'"]');if(n)n.scrollIntoView({block:'start'});}});
+    return;
+  }
   L.innerHTML=ITEMS.map((it,i)=>`<div class="item${HL(it.tag)?' hl':''}${i===SEL?' on':''}" data-i="${i}"><span class="tag">${TAG[it.tag]||it.tag||'기타'}</span><span class="tt">${esc(it.title)}</span></div>`).join('');
   L.querySelectorAll('.item').forEach(el=>el.onclick=()=>{SEL=+el.dataset.i;render();});
   const it=ITEMS[SEL]; const D=document.getElementById('detail');
@@ -106,7 +122,7 @@ async function load(){
   document.getElementById('hl').textContent=hl;
   document.getElementById('upd').textContent='새로고침 '+new Date().toLocaleTimeString('ko-KR',{timeZone:'Asia/Jakarta',hour:'2-digit',minute:'2-digit'});
   const keep=ITEMS[SEL]&&ITEMS[SEL].title;
-  ITEMS=items; const k=items.findIndex(x=>x.title===keep); SEL=k>=0?k:0;
+  ITEMS=items; const k=items.findIndex(x=>x.title===keep); SEL=k>=0?k:(COMPACT?-1:0);
   render();
 }
 load(); setInterval(load,30*60*1000);
