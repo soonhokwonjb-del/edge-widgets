@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>EDGE 허브</title>
+<style>
+  :root{--bg:#0b0d10;--card:#151a21;--line:#232a33;--fg:#e9edf2;--sub:#8b96a5;--acc:#5aa9ff}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:var(--bg);color:var(--fg);font-family:"Pretendard","Malgun Gothic","Apple SD Gothic Neo",sans-serif;overflow:hidden;user-select:none}
+  body{display:flex;flex-direction:column}
+  .tabs{display:flex;gap:8px;padding:10px 12px 0 12px}
+  .tab{flex:1;height:52px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:#c9d3df;font-size:19px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;touch-action:manipulation}
+  .tab.on{background:#1f3550;border-color:#2f5d8f;color:#fff}
+  .tab .dot{width:8px;height:8px;border-radius:50%;background:#ffb14a;display:none}
+  .tab.new .dot{display:inline-block}
+  .pane{flex:1;position:relative;min-height:0}
+  iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:none;background:var(--bg)}
+  iframe.on{display:block}
+</style>
+</head>
+<body>
+  <div class="tabs" id="tabs">
+    <div class="tab on" data-k="cal">일정</div>
+    <div class="tab" data-k="mkt">시장</div>
+    <div class="tab" data-k="news"><span class="dot"></span>뉴스</div>
+    <div class="tab" data-k="map">교통</div>
+  </div>
+  <div class="pane" id="pane"></div>
+<script>
+// 각 탭의 내용. 처음 누를 때 불러오고, 이후에는 화면만 바꿔서 빠르게 전환함
+const SRC={
+  cal:'../calendar/?mode=month',
+  mkt:'../market/',
+  news:'../news/?compact=1',
+  map:'../traffic/'
+};
+const HOME='cal', IDLE_MS=3*60*1000;
+const pane=document.getElementById('pane'), frames={};
+let cur=null, idleT=null;
+
+function show(k){
+  if(!frames[k]){
+    const f=document.createElement('iframe'); f.src=SRC[k]; f.setAttribute('loading','eager');
+    pane.appendChild(f); frames[k]=f;
+  }
+  Object.entries(frames).forEach(([n,f])=>f.classList.toggle('on',n===k));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.k===k));
+  if(k==='news'){document.querySelector('.tab[data-k=news]').classList.remove('new');try{localStorage.setItem('newsSeen',kstToday())}catch(e){}}
+  cur=k; armIdle();
+}
+// 다른 탭을 보고 그대로 두면 3분 뒤 일정 탭으로 돌아옴
+function armIdle(){clearTimeout(idleT); if(cur!==HOME) idleT=setTimeout(()=>show(HOME),IDLE_MS);}
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('pointerdown',()=>show(t.dataset.k)));
+// 탭 안쪽을 만지는 동안에는 복귀 타이머를 다시 셈
+window.addEventListener('blur',()=>setTimeout(armIdle,0));
+setInterval(()=>{ if(document.activeElement && document.activeElement.tagName==='IFRAME' && cur!==HOME) armIdle(); },20000);
+
+// 새 브리핑이 올라오면 뉴스 탭에 점 표시
+function kstToday(){return new Date(Date.now()+9*3600*1000).toISOString().slice(0,10);}
+const getSeen=()=>{try{return localStorage.getItem('newsSeen')||''}catch(e){return ''}};
+async function checkNews(){
+  try{
+    const d=kstToday();
+    const r=await fetch('https://raw.githubusercontent.com/soonhokwonjb-del/indo-briefings/main/'+d+'.md',{method:'HEAD',cache:'no-store'});
+    if(r.ok && d!==getSeen() && cur!=='news') document.querySelector('.tab[data-k=news]').classList.add('new');
+  }catch(e){}
+}
+show(HOME);
+// 시장·뉴스는 미리 불러 두어 처음 누를 때 기다리지 않게 함
+setTimeout(()=>{['mkt','news','map'].forEach(k=>{ if(!frames[k]){const f=document.createElement('iframe');f.src=SRC[k];pane.appendChild(f);frames[k]=f;} });},4000);
+checkNews(); setInterval(checkNews,30*60*1000);
+</script>
+</body>
+</html>
