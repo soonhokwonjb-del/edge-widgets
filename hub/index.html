@@ -30,12 +30,22 @@
   <div class="pane" id="pane"></div>
 <script>
 // 각 탭의 내용. 처음 누를 때 불러오고, 이후에는 화면만 바꿔서 빠르게 전환함
+// 화면을 고치면 version.json의 숫자를 올림. 위젯이 15분마다 확인해서 스스로 새로 불러옴
+const V=6;
+const HASH=location.hash;  // 집 주소(#home=...)는 iCUE에 입력한 주소에만 있고 공개 저장소에는 없음
 const SRC={
-  cal:'../calendar/?mode=month',
-  mkt:'../market/',
-  news:'../news/?compact=1',
-  map:'../map/'
+  cal:'../calendar/?mode=month&v='+V,
+  mkt:'../market/?v='+V,
+  news:'../news/?compact=1&v='+V,
+  map:'../map/?v='+V+HASH
 };
+async function checkVersion(){
+  try{
+    const j=await (await fetch('../version.json?t='+Date.now(),{cache:'no-store'})).json();
+    if(j.v!==V) location.replace(location.pathname+'?v='+j.v+HASH);
+  }catch(e){}
+}
+setInterval(checkVersion,15*60*1000); setTimeout(checkVersion,5000);
 const HOME='cal', IDLE_MS=3*60*1000;
 const pane=document.getElementById('pane'), frames={};
 let cur=null, idleT=null;
