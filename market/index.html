@@ -21,6 +21,13 @@
   .grid{flex:1;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:1fr 1fr;gap:9px;min-height:0}
   .cell{position:relative;overflow:hidden;padding:4px}
   .cell .lbl{position:absolute;left:12px;top:8px;font-size:12px;color:var(--sub);z-index:2;pointer-events:none}
+  .kr{padding:12px 14px;display:flex;flex-direction:column}
+  .kr .kn{font-size:14px;font-weight:600}
+  .kr .kp{font-size:15px;margin-top:2px}
+  .kr .kp b{font-size:17px}
+  .kr .up{color:#22ab94} .kr .dn{color:#f7525f}
+  .kr svg{flex:1;width:100%;margin-top:6px}
+  .krnote{font-size:11px;color:var(--sub);margin-top:2px}
   .tradingview-widget-container{width:100%;height:100%}
   .tradingview-widget-copyright{display:none}
 </style>
@@ -53,27 +60,21 @@
   <div class="grid">
     <div class="card cell"><div class="tradingview-widget-container"><div class="tradingview-widget-container__widget"></div>
       <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>
-      {"symbol":"IDX:COMPOSITE","width":"100%","height":"100%","locale":"kr","dateRange":"1M","colorTheme":"dark","isTransparent":true,"autosize":true,"largeChartUrl":"","chartOnly":false,"noTimeScale":true}
+      {"symbol":"IDX:COMPOSITE","width":"100%","height":"100%","locale":"kr","dateRange":"3M","colorTheme":"dark","isTransparent":true,"autosize":true,"largeChartUrl":"","chartOnly":false,"noTimeScale":true}
+      </script></div></div>
+    <div class="card cell kr" id="kr0"><div class="kn">-</div><div class="kp"></div><svg class="spark" preserveAspectRatio="none"></svg></div>
+    <div class="card cell kr" id="kr1"><div class="kn">-</div><div class="kp"></div><svg class="spark" preserveAspectRatio="none"></svg></div>
+    <div class="card cell"><div class="tradingview-widget-container"><div class="tradingview-widget-container__widget"></div>
+      <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>
+      {"symbol":"FOREXCOM:SPXUSD","width":"100%","height":"100%","locale":"kr","dateRange":"3M","colorTheme":"dark","isTransparent":true,"autosize":true,"largeChartUrl":"","chartOnly":false,"noTimeScale":true}
       </script></div></div>
     <div class="card cell"><div class="tradingview-widget-container"><div class="tradingview-widget-container__widget"></div>
       <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>
-      {"symbol":"KRX:KOSPI","width":"100%","height":"100%","locale":"kr","dateRange":"1M","colorTheme":"dark","isTransparent":true,"autosize":true,"largeChartUrl":"","chartOnly":false,"noTimeScale":true}
+      {"symbol":"FOREXCOM:NSXUSD","width":"100%","height":"100%","locale":"kr","dateRange":"3M","colorTheme":"dark","isTransparent":true,"autosize":true,"largeChartUrl":"","chartOnly":false,"noTimeScale":true}
       </script></div></div>
     <div class="card cell"><div class="tradingview-widget-container"><div class="tradingview-widget-container__widget"></div>
       <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>
-      {"symbol":"KRX:175330","width":"100%","height":"100%","locale":"kr","dateRange":"1M","colorTheme":"dark","isTransparent":true,"autosize":true,"largeChartUrl":"","chartOnly":false,"noTimeScale":true}
-      </script></div></div>
-    <div class="card cell"><div class="tradingview-widget-container"><div class="tradingview-widget-container__widget"></div>
-      <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>
-      {"symbol":"FOREXCOM:SPXUSD","width":"100%","height":"100%","locale":"kr","dateRange":"1M","colorTheme":"dark","isTransparent":true,"autosize":true,"largeChartUrl":"","chartOnly":false,"noTimeScale":true}
-      </script></div></div>
-    <div class="card cell"><div class="tradingview-widget-container"><div class="tradingview-widget-container__widget"></div>
-      <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>
-      {"symbol":"FOREXCOM:NSXUSD","width":"100%","height":"100%","locale":"kr","dateRange":"1M","colorTheme":"dark","isTransparent":true,"autosize":true,"largeChartUrl":"","chartOnly":false,"noTimeScale":true}
-      </script></div></div>
-    <div class="card cell"><div class="tradingview-widget-container"><div class="tradingview-widget-container__widget"></div>
-      <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>
-      {"symbol":"TVC:UKOIL","width":"100%","height":"100%","locale":"kr","dateRange":"1M","colorTheme":"dark","isTransparent":true,"autosize":true,"largeChartUrl":"","chartOnly":false,"noTimeScale":true}
+      {"symbol":"TVC:UKOIL","width":"100%","height":"100%","locale":"kr","dateRange":"3M","colorTheme":"dark","isTransparent":true,"autosize":true,"largeChartUrl":"","chartOnly":false,"noTimeScale":true}
       </script></div></div>
   </div>
 
@@ -111,10 +112,29 @@ async function loadFX(){
     document.getElementById('krwidr').textContent=`${nf(krwidr,2)} IDR`;
     document.getElementById('idr1m').textContent=`100만 루피아 = ${nf(1e6/krwidr,0)}원`;
     const [y,m,d]=last.split('-');
-    document.getElementById('asof').textContent=`환율 기준일 ${+m}/${+d} (ECB 고시) · 차트 TradingView`;
+    document.getElementById('asof').textContent=`환율 기준일 ${+m}/${+d} (ECB 고시) · 차트 3개월`;
   }catch(e){document.getElementById('asof').textContent='환율을 불러오지 못함';}
 }
-renderRDG(); loadFX();
+
+async function loadKR(){
+  try{
+    const j=await (await fetch('kr.json?t='+Date.now())).json();
+    j.items.forEach((it,i)=>{
+      const el=document.getElementById('kr'+i); if(!el) return;
+      const d=it.prev?it.price-it.prev:0, p=it.prev?d/it.prev*100:0;
+      const dec=it.price<10000&&it.name==='KOSPI'?2:0;
+      el.querySelector('.kn').textContent=it.name;
+      const t=new Date(it.time*1000).toLocaleString('ko-KR',{timeZone:'Asia/Seoul',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
+      el.querySelector('.kp').innerHTML=`<b>${nf(it.price,dec)}</b> <span class="${d>=0?'up':'dn'}">${p>=0?'+':''}${p.toFixed(2)}%</span> <span class="krnote">${t} KST</span>`;
+      const c=it.closes, mn=Math.min(...c), mx=Math.max(...c), W=300, H=100;
+      const pts=c.map((v,k)=>`${(k/(c.length-1)*W).toFixed(1)},${(H-(v-mn)/(mx-mn||1)*H*0.9-H*0.05).toFixed(1)}`).join(' ');
+      const col=c[c.length-1]>=c[0]?'#22ab94':'#f7525f';
+      const svg=el.querySelector('svg'); svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+      svg.innerHTML=`<defs><linearGradient id="g${i}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${col}" stop-opacity=".35"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></linearGradient></defs><polygon points="0,${H} ${pts} ${W},${H}" fill="url(#g${i})"/><polyline points="${pts}" fill="none" stroke="${col}" stroke-width="1.6" vector-effect="non-scaling-stroke"/>`;
+    });
+  }catch(e){[0,1].forEach(i=>{const el=document.getElementById('kr'+i); if(el) el.querySelector('.kn').textContent='국내 시세 준비 중';});}
+}
+renderRDG(); loadFX(); loadKR(); setInterval(loadKR,10*60*1000);
 setInterval(()=>{renderRDG();loadFX();},60*60*1000);
 setTimeout(()=>location.reload(),6*60*60*1000);
 </script>
