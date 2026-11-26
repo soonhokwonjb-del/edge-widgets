@@ -13,7 +13,7 @@
   .row{display:flex;gap:6px}
   input{flex:1;height:46px;border-radius:10px;border:1px solid #2f5d8f;background:#0f141b;color:#fff;font-size:18px;padding:0 14px;outline:none;font-family:inherit}
   input::placeholder{color:#6b7684}
-  .b{height:46px;padding:0 14px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:#c9d3df;font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;white-space:nowrap;touch-action:manipulation;user-select:none}
+  .b{height:46px;padding:0 8px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:#c9d3df;font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;white-space:nowrap;touch-action:manipulation;user-select:none}
   .b.on{background:#1f3550;border-color:#2f5d8f;color:#fff}
   .b.x{width:46px;padding:0;font-size:20px}
   .chips{display:flex;gap:6px;overflow-x:auto;min-height:34px}
@@ -38,15 +38,19 @@
     <div class="b x" id="clr">×</div>
   </div>
   <div class="row">
-    <div class="b on" data-m="from" style="flex:1">회사 → 여기 소요시간</div>
+    <div class="b on" data-m="from" style="flex:1">회사 → 여기</div>
+    <div class="b" data-m="hfrom" style="flex:1">집 → 여기</div>
     <div class="b" data-m="to" style="flex:1">여기 → 회사</div>
-    <div class="b" data-m="place" style="flex:1">위치만 보기</div>
+    <div class="b" data-m="hto" style="flex:1">여기 → 집</div>
+    <div class="b" data-m="place" style="flex:1">위치만</div>
   </div>
   <div class="chips" id="chips"></div>
   <div class="map"><iframe id="m"></iframe><div class="kb" id="kb"></div><div class="hint" id="hint">위 검색창을 눌러 화면 키보드로 입력하거나<br>최근 검색 버튼을 누르세요</div></div>
 <script>
 // 출발 기준: KBBF 본사 (OJK 금융회사 디렉터리 등록 주소)
 const OFFICE='Jl. Melawai Raya No. 66, Kebayoran Baru, Jakarta Selatan';
+// 집 주소는 공개 페이지에 넣지 않고, iCUE에 입력한 주소 끝(#home=...)에서만 읽음
+const HOME_ADDR=decodeURIComponent((location.hash.match(/home=([^&]+)/)||[])[1]||'');
 const FAV=['Soekarno-Hatta International Airport','Bank Indonesia','OJK Wisma Mulia 2','SCBD Jakarta'];
 const q=document.getElementById('q'), m=document.getElementById('m'), hint=document.getElementById('hint'), chips=document.getElementById('chips');
 let mode='from', last='';
@@ -57,9 +61,13 @@ function run(place){
   place=(place||'').trim(); if(!place) return;
   last=place; q.value=place; hint.style.display='none';
   const e=encodeURIComponent;
+  const dir=(a,b)=>`https://maps.google.com/maps?saddr=${e(a)}&daddr=${e(b)}&hl=ko&output=embed`;
+  if((mode==='hfrom'||mode==='hto')&&!HOME_ADDR){hint.style.display='flex';hint.innerHTML='집 주소가 설정되지 않았습니다';m.removeAttribute('src');return;}
   if(mode==='place') m.src=`https://maps.google.com/maps?q=${e(place)}&hl=ko&z=15&output=embed`;
-  else if(mode==='from') m.src=`https://maps.google.com/maps?saddr=${e(OFFICE)}&daddr=${e(place)}&hl=ko&output=embed`;
-  else m.src=`https://maps.google.com/maps?saddr=${e(place)}&daddr=${e(OFFICE)}&hl=ko&output=embed`;
+  else if(mode==='from') m.src=dir(OFFICE,place);
+  else if(mode==='to') m.src=dir(place,OFFICE);
+  else if(mode==='hfrom') m.src=dir(HOME_ADDR,place);
+  else m.src=dir(place,HOME_ADDR);
   const r=store.get().filter(x=>x!==place); r.unshift(place); store.set(r.slice(0,8)); drawChips(); ping();
 }
 function drawChips(){
