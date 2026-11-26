@@ -25,7 +25,7 @@
     <div class="tab on" data-k="cal">일정</div>
     <div class="tab" data-k="mkt">시장</div>
     <div class="tab" data-k="news"><span class="dot"></span>뉴스</div>
-    <div class="tab" data-k="map">교통</div>
+    <div class="tab" data-k="map">지도</div>
   </div>
   <div class="pane" id="pane"></div>
 <script>
@@ -34,7 +34,7 @@ const SRC={
   cal:'../calendar/?mode=month',
   mkt:'../market/',
   news:'../news/?compact=1',
-  map:'../traffic/'
+  map:'../map/'
 };
 const HOME='cal', IDLE_MS=3*60*1000;
 const pane=document.getElementById('pane'), frames={};
@@ -53,9 +53,8 @@ function show(k){
 // 다른 탭을 보고 그대로 두면 3분 뒤 일정 탭으로 돌아옴
 function armIdle(){clearTimeout(idleT); if(cur!==HOME) idleT=setTimeout(()=>show(HOME),IDLE_MS);}
 document.querySelectorAll('.tab').forEach(t=>t.addEventListener('pointerdown',()=>show(t.dataset.k)));
-// 탭 안쪽을 만지는 동안에는 복귀 타이머를 다시 셈
-window.addEventListener('blur',()=>setTimeout(armIdle,0));
-setInterval(()=>{ if(document.activeElement && document.activeElement.tagName==='IFRAME' && cur!==HOME) armIdle(); },20000);
+// 탭 안에서 입력·터치가 있으면 복귀 타이머를 다시 셈 (지도 검색 중에 일정 탭으로 넘어가지 않도록)
+window.addEventListener('message',e=>{ if(e.data==='edge-activity') armIdle(); });
 
 // 새 브리핑이 올라오면 뉴스 탭에 점 표시
 function kstToday(){return new Date(Date.now()+9*3600*1000).toISOString().slice(0,10);}
