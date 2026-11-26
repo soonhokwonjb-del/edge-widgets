@@ -34,7 +34,7 @@
 </head>
 <body>
   <div class="row">
-    <input id="q" placeholder="여기를 눌러 장소 검색 (예: Grand Indonesia)" autocomplete="off" readonly inputmode="none">
+    <input id="q" placeholder="여기를 눌러 장소 검색 (예: Grand Indonesia)" autocomplete="off" inputmode="none">
     <div class="b x" id="clr">×</div>
   </div>
   <div class="row">
@@ -107,7 +107,7 @@ kb.querySelectorAll('.k').forEach(k=>onTap(k,()=>{
   else if(a==='close') kbShow(false);
   else if(a==='go'){kbShow(false); run(q.value);}
 }));
-onTap(q,()=>{kbShow(true);ping();});
+q.addEventListener('pointerdown',()=>{kbShow(true);ping();});q.addEventListener('touchstart',()=>{kbShow(true);ping();},{passive:true});q.addEventListener('focus',()=>kbShow(true));
 drawChips();
 </script>
 </body>
