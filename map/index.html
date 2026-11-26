@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>지도</title>
+<style>
+  :root{--bg:#0b0d10;--card:#151a21;--line:#232a33;--fg:#e9edf2;--sub:#8b96a5}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:var(--bg);color:var(--fg);font-family:"Pretendard","Malgun Gothic",sans-serif;overflow:hidden}
+  body{display:flex;flex-direction:column;gap:8px;padding:10px 12px 12px}
+  .row{display:flex;gap:6px}
+  input{flex:1;height:46px;border-radius:10px;border:1px solid #2f5d8f;background:#0f141b;color:#fff;font-size:18px;padding:0 14px;outline:none;font-family:inherit}
+  input::placeholder{color:#6b7684}
+  .b{height:46px;padding:0 14px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:#c9d3df;font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;white-space:nowrap;touch-action:manipulation;user-select:none}
+  .b.on{background:#1f3550;border-color:#2f5d8f;color:#fff}
+  .b.x{width:46px;padding:0;font-size:20px}
+  .chips{display:flex;gap:6px;overflow-x:auto;min-height:34px}
+  .chip{flex:none;height:32px;padding:0 12px;border-radius:16px;background:#1b222b;border:1px solid var(--line);color:#c9d3df;font-size:14px;display:flex;align-items:center;cursor:pointer;user-select:none}
+  .chip.fav{border-color:#5a3d12;color:#ffd9a3}
+  .map{flex:1;border-radius:14px;overflow:hidden;position:relative;background:#111}
+  iframe{width:100%;height:100%;border:0;filter:brightness(0.88)}
+  .hint{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--sub);font-size:16px;text-align:center;line-height:1.6;pointer-events:none}
+</style>
+</head>
+<body>
+  <div class="row">
+    <input id="q" placeholder="장소 검색 (예: Grand Indonesia, 수카르노하타 공항)" autocomplete="off">
+    <div class="b x" id="clr">×</div>
+  </div>
+  <div class="row">
+    <div class="b on" data-m="from" style="flex:1">회사 → 여기 소요시간</div>
+    <div class="b" data-m="to" style="flex:1">여기 → 회사</div>
+    <div class="b" data-m="place" style="flex:1">위치만 보기</div>
+  </div>
+  <div class="chips" id="chips"></div>
+  <div class="map"><iframe id="m"></iframe><div class="hint" id="hint">장소를 입력하고 Enter를 누르거나<br>아래 최근 검색을 누르세요</div></div>
+<script>
+// 출발 기준: KBBF 본사 (OJK 금융회사 디렉터리 등록 주소)
+const OFFICE='Jl. Melawai Raya No. 66, Kebayoran Baru, Jakarta Selatan';
+const FAV=['Soekarno-Hatta International Airport','Bank Indonesia','OJK Wisma Mulia 2','SCBD Jakarta'];
+const q=document.getElementById('q'), m=document.getElementById('m'), hint=document.getElementById('hint'), chips=document.getElementById('chips');
+let mode='from', last='';
+const store={get(){try{return JSON.parse(localStorage.getItem('mapRecent')||'[]')}catch(e){return []}},set(v){try{localStorage.setItem('mapRecent',JSON.stringify(v))}catch(e){}}};
+
+function ping(){try{parent.postMessage('edge-activity','*')}catch(e){}}
+function run(place){
+  place=(place||'').trim(); if(!place) return;
+  last=place; q.value=place; hint.style.display='none';
+  const e=encodeURIComponent;
+  if(mode==='place') m.src=`https://maps.google.com/maps?q=${e(place)}&hl=ko&z=15&output=embed`;
+  else if(mode==='from') m.src=`https://maps.google.com/maps?saddr=${e(OFFICE)}&daddr=${e(place)}&hl=ko&output=embed`;
+  else m.src=`https://maps.google.com/maps?saddr=${e(place)}&daddr=${e(OFFICE)}&hl=ko&output=embed`;
+  const r=store.get().filter(x=>x!==place); r.unshift(place); store.set(r.slice(0,8)); drawChips(); ping();
+}
+function drawChips(){
+  const r=store.get();
+  chips.innerHTML=r.map(x=>`<div class="chip">${x.replace(/[<>&]/g,'')}</div>`).join('')+FAV.filter(x=>!r.includes(x)).map(x=>`<div class="chip fav">${x}</div>`).join('');
+  chips.querySelectorAll('.chip').forEach(c=>c.addEventListener('pointerdown',()=>run(c.textContent)));
+}
+q.addEventListener('keydown',ev=>{ping(); if(ev.key==='Enter'&&!ev.isComposing) run(q.value);});
+document.getElementById('clr').addEventListener('pointerdown',ev=>{ev.preventDefault();q.value='';q.focus();ping();});
+document.querySelectorAll('[data-m]').forEach(b=>b.addEventListener('pointerdown',()=>{
+  mode=b.dataset.m; document.querySelectorAll('[data-m]').forEach(x=>x.classList.toggle('on',x===b));
+  if(last) run(last); ping();
+}));
+document.addEventListener('pointerdown',ping);
+drawChips();
+</script>
+</body>
+</html>
